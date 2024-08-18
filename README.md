@@ -16,7 +16,7 @@
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/linkedin-auto.git
+   git clone https://github.com/wendbandeira/linkedin-auto.git
    ```
 2. Navigate to the project directory:
    ```bash
