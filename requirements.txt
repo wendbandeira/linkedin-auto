@@ -1,0 +1,23 @@
+
+Criar o Ambiente Virtual:
+=======================
+python3 -m venv ~/myenv
+
+Ativar o Ambiente Virtual:
+
+source ~/myenv/bin/activate
+Instalar Pacotes:
+
+pip install selenium requests beautifulsoup4
+Executar seu Script:
+Execute seu script Python normalmente.
+
+Desativar o Ambiente Virtual:
+
+deactivate
+
+===========================
+Instalar Pacotes no Ambiente Virtual
+
+pip install selenium requests beautifulsoup4
+
