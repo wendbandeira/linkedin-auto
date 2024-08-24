@@ -1,4 +1,4 @@
-#!/Users/wendellbandeira/Desenvolvimento/linkedin-auto/myenv/bin/python3.12
+#!/home/wendell/DEV/linkedin-auto/myenv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

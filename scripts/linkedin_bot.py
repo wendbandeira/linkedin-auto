@@ -19,6 +19,21 @@ def login_to_linkedin(driver, email, password):
     login_button.click()
     time.sleep(5)
 
+def start_search(driver):
+    # Navegar para a página inicial do LinkedIn
+    driver.get("https://www.linkedin.com/feed/")
+    time.sleep(5)
+    
+    # Pesquisar perfis e aplicar o filtro de "Pessoas"
+    search_box = driver.find_element(By.XPATH, '//input[@aria-label="Pesquisar"]')
+    search_box.clear()
+    search_box.send_keys('agronegócio')
+    search_box.send_keys(Keys.RETURN)
+    time.sleep(5)
+    people_filter = driver.find_element(By.XPATH, '//button[text()="Pessoas"]')
+    people_filter.click()
+    time.sleep(5)
+
 def get_total_profiles_on_page(driver):
     profiles = driver.find_elements(By.CSS_SELECTOR, 'a[href*="/in/"]')
     profile_urls = [profile.get_attribute('href') for profile in profiles]
@@ -29,6 +44,10 @@ def go_to_next_page(driver, retry=2):
     attempt = 0
     while attempt < retry:
         try:
+            # Realizar o scroll down até o final da página
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)  # Espera breve para garantir que o scroll foi completado
+            
             # Espera explícita para garantir que o botão esteja presente
             next_button = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//button[@aria-label="Avançar" and not(@disabled)]'))
@@ -48,9 +67,10 @@ def go_to_next_page(driver, retry=2):
             attempt += 1
             if attempt < retry:
                 print("Tentando novamente...")
-                time.sleep(30)
+                time.sleep(5)
             else:
-                print("Máximo de tentativas atingido.")
+                print("Máximo de tentativas atingido. Recomeçando a partir da pesquisa.")
+                start_search(driver)  # Recomeça a partir da pesquisa
                 return False
 
 def collect_and_visit_profiles(driver, csv_writer, visited_profiles):
@@ -59,10 +79,20 @@ def collect_and_visit_profiles(driver, csv_writer, visited_profiles):
         
         for profile_url in profile_urls:
             if profile_url not in visited_profiles:
-                driver.get(profile_url)
+                # Abrir o perfil em uma nova aba
+                driver.execute_script("window.open(arguments[0]);", profile_url)
+                driver.switch_to.window(driver.window_handles[-1])
+                
+                # Esperar a página carregar e realizar a visita
+                time.sleep(5)
                 csv_writer.writerow([profile_url])
                 print(f"Visitando perfil: {profile_url}")
                 time.sleep(20)  # Espera de 20 segundos entre as interações com os perfis
+                
+                # Fechar a aba e voltar para a aba principal
+                driver.close()
+                driver.switch_to.window(driver.window_handles[0])
+                
                 visited_profiles.add(profile_url)
             else:
                 print(f"Perfil já visitado: {profile_url}")
@@ -76,8 +106,8 @@ def main():
     driver = webdriver.Chrome(service=service)
     
     # Fazer login no LinkedIn
-    login_to_linkedin(driver, 'email@email', 'password')
-    time.sleep(20)
+    login_to_linkedin(driver, 'email', 'password')
+    
     # Verificar se o diretório data/ existe, se não, criar
     if not os.path.exists('data'):
         os.makedirs('data')
@@ -90,6 +120,9 @@ def main():
             for row in csv_reader:
                 visited_profiles.add(row[0])
     
+    # Realizar a pesquisa inicial
+    start_search(driver)
+    
     # Abrir o arquivo CSV para escrita
     with open('data/profiles_visited.csv', mode='a', newline='') as file:
         csv_writer = csv.writer(file)
@@ -97,15 +130,6 @@ def main():
         # Escrever cabeçalho se o arquivo estiver vazio
         if file.tell() == 0:
             csv_writer.writerow(['Profile URL'])
-        
-        # Pesquisar perfis e coletar URLs
-        search_box = driver.find_element(By.XPATH, '//input[@aria-label="Pesquisar"]')
-        search_box.send_keys('agronegócio')
-        search_box.send_keys(Keys.RETURN)
-        time.sleep(5)
-        people_filter = driver.find_element(By.XPATH, '//button[text()="Pessoas"]')
-        people_filter.click()
-        time.sleep(5)
         
         # Coletar e visitar perfis
         collect_and_visit_profiles(driver, csv_writer, visited_profiles)
